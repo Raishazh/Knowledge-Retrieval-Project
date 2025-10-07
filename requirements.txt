@@ -1,0 +1,7 @@
+langchain-community
+faiss-cpu
+pydantic
+together
+numpy
+fastapi
+uvicorn

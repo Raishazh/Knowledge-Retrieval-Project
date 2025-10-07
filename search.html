@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Varta:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Search Results - Knowledge Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(180deg, #708686 0%, #F8F3E7 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1450px;
+            margin: 0 auto;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 200;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .home-btn:hover {
+            background: white;
+            transform: translateY(-2px);
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            gap: 1rem;
+            height: 50px;   
+            margin-top: 4rem;
+            display: flex;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 16px 22px;
+            border: none;
+            border-radius: 25px;
+            background: rgb(248 243 231);
+            box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+            font-size: 1rem;
+            color: #797979;
+        }
+
+        .search-input::placeholder {
+            color: #797979;
+            font-weight: 400;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: white;
+        }
+
+        .search-btn {
+            background-color: #4D536D;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 12px 32px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-btn:hover {
+            background: #2d3748;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Answer Section */
+        .answer-section {
+            background: rgb(248 243 231);
+            border-radius: 15px;
+            padding: 2rem;
+            color: #4a5568;
+        }
+
+        .answer-title {
+            font-size: 1.5rem;
+            font-family: 'Varta', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+
+        .answer-content {
+            max-height: 300px;
+            overflow-y: auto;
+            line-height: 1.6;
+            font-family: 'Varta', sans-serif;
+            font-size: 1rem;
+            color: #000000;
+            white-space: pre-wrap;
+        }
+
+        .answer-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .answer-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .answer-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .answer-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Knowledge Graph Section */
+        .graph-section {
+            background: #4a5568;
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+        }
+
+        .graph-title {
+            font-size: 1.5rem;
+            font-family: 'Varta', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .mini-graph-container {
+            width: 100%;
+            height: 300px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #miniGraph {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #miniGraph:active {
+            cursor: grabbing;
+        }
+
+        /* News Section */
+        .news-section {
+            background: rgba(77, 83, 109, 0.5);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            grid-column: 1 / -1;
+        }
+
+        .news-title {
+            font-family: 'Varta', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .news-grid {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .news-item {
+            background: rgb(77, 83, 109);
+            border-radius: 10px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .news-item:hover {
+            background: rgba(45, 55, 72, 1);
+            transform: translateY(-2px);
+        }
+
+        .news-item-title {
+            font-family: 'Varta', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #F8F3E7;
+        }
+
+        .news-item-preview {
+            font-family: 'Varta', sans-serif;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #F8F3E7;
+            margin-bottom: 0.7rem;
+        }
+
+        .read-full-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #A9C5C5;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .read-full-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .page-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Varta', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Varta', sans-serif;
+            font-size: 0.9rem;
+        }
+
+        /* Graph Tooltip */
+        .tooltip {
+            position: absolute;
+            text-align: left;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border-radius: 6px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            max-width: 250px;
+            line-height: 1.4;
+            z-index: 1000;
+        }
+
+        .tooltip h4 {
+            margin: 0 0 0.5rem 0;
+            color: #4CAF50;
+            font-size: 0.875rem;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #666;
+        }
+
+        .loading-spinner {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 2px solid #4a5568;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Node and Link Styles */
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .node:hover {
+            stroke-width: 3px;
+        }
+
+        .node.highlighted {
+            stroke: #4CAF50 !important;
+            stroke-width: 3px !important;
+        }
+
+        .node.selected {
+            stroke: #FFD700 !important;
+            stroke-width: 4px !important;
+        }
+
+        .node.dimmed {
+            opacity: 0.3;
+        }
+
+        .link {
+            stroke: rgba(255, 255, 255, 0.6);
+            stroke-width: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .link:hover {
+            stroke: #4CAF50;
+            stroke-width: 2px;
+        }
+
+        .link.highlighted {
+            stroke: #4CAF50 !important;
+            stroke-width: 2px !important;
+        }
+
+        .link.dimmed {
+            opacity: 0.1;
+        }
+
+        .node-label {
+            font-size: 10px;
+            font-weight: 600;
+            fill: white;
+            text-anchor: middle;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .node-label.dimmed {
+            opacity: 0.3;
+        }
+
+        .node-label.highlighted {
+            fill: #4CAF50;
+            font-size: 11px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-container {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Search -->
+        <div class="header">
+            <button class="home-btn" id="homeBtn" title="Go to Home">
+                <img src="/static/Home.png" alt="Home" style="width: 20px; height: 20px;">
+            </button>
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput"
+                    placeholder="Type Query"
+                >
+                <button class="search-btn" id="searchBtn">Search</button>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="content-grid">
+            <!-- Answer Section -->
+            <div class="answer-section">
+                <h2 class="answer-title">Answer for: <span id="queryDisplay">[Query]</span></h2>
+                <div class="answer-content" id="answerContent">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading answer...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Knowledge Graph Section -->
+            <div class="graph-section">
+                <h2 class="graph-title">Knowledge Graph</h2>
+                <div class="mini-graph-container">
+                    <svg id="miniGraph"></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Section -->
+        <div class="news-section">
+            <h2 class="news-title">Recommended News</h2>
+            <div class="news-grid" id="newsGrid">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading news...
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination">
+                <button class="page-btn" id="prevBtn" disabled>← Back</button>
+                <span class="page-info" id="pageInfo">Page 1</span>
+                <button class="page-btn" id="nextBtn">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Configuration
+        const API_BASE = '/api';
+        
+        // Global variables
+        let currentQuery = '';
+        let graphData = { nodes: [], edges: [] };
+        let newsData = [];
+        let currentPage = 1;
+        let newsPerPage = 3;
+        let simulation;
+        let svg, g;
+        let selectedNode = null;
+        let highlightedElements = { nodes: new Set(), edges: new Set() };
+
+        // Initialize the application
+        async function init() {
+            setupEventListeners();
+            setupMiniGraph();
+            
+            // Get query from URL params or storage
+            const urlParams = new URLSearchParams(window.location.search);
+            const query = urlParams.get('q') || sessionStorage.getItem('currentQuery') || '';
+            
+            if (query) {
+                document.getElementById('searchInput').value = query;
+                document.getElementById('queryDisplay').textContent = query;
+                currentQuery = query;
+                await handleSearch(false); // Don't update URL again
+            }
+        }
+
+        function setupEventListeners() {
+            // Navigation
+            document.getElementById('homeBtn').addEventListener('click', goHome);
+            
+            // Search
+            document.getElementById('searchBtn').addEventListener('click', () => handleSearch(true));
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleSearch(true);
+            });
+            
+            // Pagination
+            document.getElementById('prevBtn').addEventListener('click', () => changePage(-1));
+            document.getElementById('nextBtn').addEventListener('click', () => changePage(1));
+        }
+
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        function setupMiniGraph() {
+            const container = document.getElementById('miniGraph');
+            const containerRect = container.getBoundingClientRect();
+            
+            svg = d3.select('#miniGraph')
+                .attr('width', containerRect.width)
+                .attr('height', containerRect.height);
+
+            g = svg.append('g');
+
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.5, 3])
+                .on('zoom', (event) => {
+                    g.attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Reset on click
+            svg.on('click', (event) => {
+                if (event.target === event.currentTarget) {
+                    resetHighlighting();
+                }
+            });
+        }
+
+        async function handleSearch(updateUrl = true) {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) return;
+        
+            currentQuery = query;
+            document.getElementById('queryDisplay').textContent = query;
+            
+            // Reset all content areas to loading state immediately
+            document.getElementById('answerContent').innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading answer...
+                </div>
+            `;
+            
+            document.getElementById('newsGrid').innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Loading news...
+                </div>
+            `;
+            
+            // Clear existing graph
+            if (g) {
+                g.selectAll('*').remove();
+                resetHighlighting();
+            }
+            
+            // Reset pagination
+            document.getElementById('pageInfo').textContent = 'Loading...';
+            document.getElementById('prevBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = true;
+            
+            if (updateUrl) {
+                const url = new URL(window.location);
+                url.searchParams.set('q', query);
+                window.history.pushState({}, '', url);
+                sessionStorage.setItem('currentQuery', query);
+            }
+        
+            // Call API to get new results
+            await loadAnswer(query);
+        }
+
+        async function loadAnswer(query) {
+            try {
+                const response = await fetch(`${API_BASE}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+        
+                if (!response.ok) throw new Error('Failed to get answer');
+        
+                const data = await response.json();
+                
+                // Display the answer
+                document.getElementById('answerContent').textContent = data.answer || 'No answer available.';
+                
+                // Extract and render graph data from the same response
+                if (data.graph_data) {
+                    graphData = data.graph_data;
+                    renderMiniGraph();
+                }
+                
+                // Also handle news data here if it's in the same response
+                if (data.news_items) {
+                    newsData = data.news_items;
+                    currentPage = 1;
+                    renderNews();
+                }
+                
+            } catch (error) {
+                console.error('Answer loading error:', error);
+                document.getElementById('answerContent').textContent = 'Failed to load answer. Please try again.';
+            }
+        }
+
+        function renderMiniGraph() {
+            if (!graphData.nodes || graphData.nodes.length === 0) return;
+
+            // Clear existing
+            g.selectAll('*').remove();
+            resetHighlighting();
+
+            const width = +svg.attr('width');
+            const height = +svg.attr('height');
+
+            // Create simulation
+            simulation = d3.forceSimulation(graphData.nodes)
+                .force('link', d3.forceLink(graphData.edges).id(d => d.id).distance(60))
+                .force('charge', d3.forceManyBody().strength(-200))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(15));
+
+            // Create links
+            const link = g.append('g')
+                .selectAll('line')
+                .data(graphData.edges)
+                .join('line')
+                .attr('class', 'link')
+                .on('mouseover', showEdgeTooltip)
+                .on('mouseout', hideTooltip);
+
+            // Create nodes
+            const node = g.append('g')
+                .selectAll('circle')
+                .data(graphData.nodes)
+                .join('circle')
+                .attr('class', 'node')
+                .attr('r', 8)
+                .attr('fill', d => getNodeColor(d))
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .on('mouseover', showNodeTooltip)
+                .on('mouseout', hideTooltip)
+                .on('click', handleNodeClick)
+                .call(d3.drag()
+                    .on('start', dragStarted)
+                    .on('drag', dragged)
+                    .on('end', dragEnded));
+
+            // Create labels
+            const labels = g.append('g')
+                .selectAll('text')
+                .data(graphData.nodes)
+                .join('text')
+                .attr('class', 'node-label')
+                .text(d => d.label.length > 10 ? d.label.substring(0, 10) + '...' : d.label);
+
+            // Update positions
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + 15);
+            });
+        }
+
+        function renderNews() {
+            const container = document.getElementById('newsGrid');
+            
+            if (!newsData.length) {
+                container.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.7);">No news articles found.</div>';
+                updatePagination();
+                return;
+            }
+
+            const startIdx = (currentPage - 1) * newsPerPage;
+            const endIdx = startIdx + newsPerPage;
+            const pageNews = newsData.slice(startIdx, endIdx);
+
+            container.innerHTML = pageNews.map(item => `
+                <div class="news-item">
+                    <h3 class="news-item-title">${item.title}</h3>
+                    <p class="news-item-preview">${item.preview}</p>
+                    <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="read-full-btn">
+                        Read Full Article
+                    </a>
+                </div>
+            `).join('');
+
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(newsData.length / newsPerPage);
+            
+            document.getElementById('pageInfo').textContent = 
+                newsData.length ? `Page ${currentPage} of ${totalPages}` : 'No news';
+            
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(newsData.length / newsPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderNews();
+            }
+        }
+
+        function getNodeColor(node) {
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+            const hash = node.id.split('').reduce((a, b) => {
+                a = ((a << 5) - a) + b.charCodeAt(0);
+                return a & a;
+            }, 0);
+            return colors[Math.abs(hash) % colors.length];
+        }
+
+        function showNodeTooltip(event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.transition().duration(200).style('opacity', 1);
+            
+            tooltip.html(`
+                <h4>${d.label}</h4>
+                <p>Click to highlight connections</p>
+            `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        }
+
+        function showEdgeTooltip(event, d) {
+            const tooltip = d3.select('#tooltip');
+            tooltip.transition().duration(200).style('opacity', 1);
+            tooltip.html(`
+                <h4>${d.relation}</h4>
+                <p><strong>From:</strong> ${d.source.label}</p>
+                <p><strong>To:</strong> ${d.target.label}</p>
+            `)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 28) + 'px');
+        }
+
+        function hideTooltip() {
+            d3.select('#tooltip').transition().duration(300).style('opacity', 0);
+        }
+
+        function handleNodeClick(event, d) {
+            event.stopPropagation();
+            
+            if (selectedNode && selectedNode.id === d.id) {
+                resetHighlighting();
+                return;
+            }
+
+            selectedNode = d;
+            highlightConnections(d);
+        }
+
+        function highlightConnections(selectedNode) {
+            highlightedElements.nodes.clear();
+            highlightedElements.edges.clear();
+
+            graphData.edges.forEach(edge => {
+                if (edge.source.id === selectedNode.id || edge.target.id === selectedNode.id) {
+                    highlightedElements.edges.add(edge);
+                    highlightedElements.nodes.add(edge.source.id);
+                    highlightedElements.nodes.add(edge.target.id);
+                }
+            });
+
+            applyHighlighting();
+        }
+
+        function applyHighlighting() {
+            g.selectAll('.node')
+                .classed('highlighted', d => highlightedElements.nodes.has(d.id) && (!selectedNode || d.id !== selectedNode.id))
+                .classed('selected', d => selectedNode && d.id === selectedNode.id)
+                .classed('dimmed', d => selectedNode && !highlightedElements.nodes.has(d.id));
+
+            g.selectAll('.link')
+                .classed('highlighted', d => highlightedElements.edges.has(d))
+                .classed('dimmed', d => selectedNode && !highlightedElements.edges.has(d));
+
+            g.selectAll('.node-label')
+                .classed('highlighted', d => highlightedElements.nodes.has(d.id))
+                .classed('dimmed', d => selectedNode && !highlightedElements.nodes.has(d.id));
+        }
+
+        function resetHighlighting() {
+            selectedNode = null;
+            highlightedElements.nodes.clear();
+            highlightedElements.edges.clear();
+
+            g.selectAll('.node')
+                .classed('highlighted', false)
+                .classed('selected', false)
+                .classed('dimmed', false);
+
+            g.selectAll('.link')
+                .classed('highlighted', false)
+                .classed('dimmed', false);
+
+            g.selectAll('.node-label')
+                .classed('highlighted', false)
+                .classed('dimmed', false);
+        }
+
+        // Drag functions
+        function dragStarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragEnded(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Initialize when DOM loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
