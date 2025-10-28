@@ -52,8 +52,8 @@
             position: fixed;
             top: 1.5rem;
             left: 0.7rem;
-            z-index: 300;
-            background: none;
+            z-index: 1100;
+            background: rgba(0, 0, 0, 0.6);
             border: none;
             color: white;
             font-size: 1.5rem;
@@ -173,7 +173,7 @@
             position: absolute;
             top: 1.5rem;
             right: 1.5rem;
-            z-index: 200;
+            z-index: 1050;
             background: rgba(0, 0, 0, 0.6);
             border: none;
             color: white;
@@ -470,6 +470,13 @@
         async function init() {
             setupEventListeners();
             setupVisualizationSVG();
+            
+            // Auto-collapse sidebar on mobile
+            if (window.innerWidth <= 768) {
+                sidebarCollapsed = true;
+                document.getElementById('sidebar').classList.add('collapsed');
+            }
+            
             await loadGraphData();
             hideLoading();
         }

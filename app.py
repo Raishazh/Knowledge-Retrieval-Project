@@ -1,9 +1,6 @@
 import sqlite3
 import contextlib
 import json
-from http.server import BaseHTTPRequestHandler
-from urllib.parse import urlparse, parse_qs
-import traceback
 from pydantic import BaseModel, Field
 from typing import List, Dict, Tuple, Optional
 import os
@@ -23,7 +20,6 @@ app = FastAPI(title="Knowledge Graph API")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Enable CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -255,8 +251,6 @@ def extract_information_from_triplets(query: str,
                                       triplets: List[Tuple[str, str, str]], 
                                       relations: List[Tuple[str, str]]) -> str:
     """
-    REPLACE THIS FUNCTION WITH YOUR ACTUAL IMPLEMENTATION
-    
     Args:
         triplets: List of triplets from retrieve_triplets
         relations: List of relation definitions from retrieve_triplets
@@ -476,7 +470,7 @@ def serve_search_page():
 
 @app.post("/api/query", response_model=QueryResponse)
 def process_query(request: QueryRequest):
-    """Process user query and return comprehensive response"""
+    """Process user query and return response"""
     try:
         # Step 1: Retrieve triplets
         query = request.query
@@ -521,7 +515,6 @@ def process_query(request: QueryRequest):
             nodes_set.add(head)
             nodes_set.add(tail)
             
-            # Find definition for this relation
             definition = "No definition available"
             for rel, def_text in relations_data:
                 if rel == relation:
@@ -554,7 +547,7 @@ def process_query(request: QueryRequest):
 def get_graph_data(
     search: Optional[str] = None
 ):
-    """Get complete graph data with nodes and edges."""
+    """Get complete graph data for explore page"""
     
     try:
         # Build dynamic query based on configuration
@@ -577,9 +570,9 @@ def get_graph_data(
         with get_triplets_db() as conn:
             cursor = conn.execute(base_query, params)
             triplets = cursor.fetchall()
-
+        
+        # Get definitions
         with get_definitions_db() as conn:
-            # Get definitions
             def_table = DATABASE_CONFIG["definitions_table"]
             def_col = DATABASE_CONFIG["definition_column"]
             rel_col_def = DATABASE_CONFIG["relation_column"]
